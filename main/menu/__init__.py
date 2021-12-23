@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 import pygame
 
 from object import Object, Button
@@ -18,6 +19,14 @@ class Manage(Manager):
         main.object_manager.add_objects(*buttons)
 
     def update(self, main: Main):
+=======
+import object
+from manager import Manager
+
+
+class Manage(Manager):
+    def draw(self):
+>>>>>>> bb75e844e508fc2618b32beb6c6021c543d17da2
         pass
 
 
