@@ -13,6 +13,10 @@ class Mouse:
         self.is_click = False
         self.is_drag = False
 
+        self.last_drag = False
+        self.last_click = False
+        self.last_hold = False
+
     def update(self):
         self.last_pressed = self.pressed
         self.pressed = pygame.mouse.get_pressed(3)
@@ -20,19 +24,18 @@ class Mouse:
         self.last_pos = self.pos
         self.pos = pygame.mouse.get_pos()
 
-        if self.last_pressed[0] == self.pressed[0]:
-            if self.is_hold and self.pos != self.last_pos:
-                self.is_hold = False
-                self.is_drag = True
-            else:
-                self.is_hold = True
+        if self.last_pressed[0] == 1 and self.pressed[0] == 1:
+            self.is_drag = self.is_hold and self.pos != self.last_pos or self.is_drag
+            self.is_hold = not self.is_drag
 
-        elif self.is_hold and self.last_pressed[0] == self.pressed[0]: 
+        elif self.is_hold and self.last_pressed[0] == 1:
             self.is_hold = False
             self.is_click = True
 
         else:
             self.is_hold = False
+            self.is_drag = False
+            self.is_click = False
 
     @property
     def left_pressed(self) -> bool:

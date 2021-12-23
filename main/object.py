@@ -13,7 +13,22 @@ class Object(ABC):
     def click(self, mouse: Mouse):
         pass
 
-    def drag(self, mouse, dragging_shift):
+    def end_click(self):
+        pass
+
+    def start_drag(self, mouse, collusion_cord):
+        pass
+
+    def drag(self, mouse):
+        pass
+
+    def end_drag(self):
+        pass
+
+    def hold(self, mouse):
+        pass
+
+    def end_hold(self):
         pass
 
     @abstractmethod
@@ -64,14 +79,19 @@ class RectObject(Object):
 
         self.x, self.y, self.width, self.height = x, y, width, height
 
+        self.drag_shift = []
+
     def click(self, mouse: Mouse):
-        print("Click")
+        pass
 
     def draw(self, win):
         super().draw(win)
 
-    def drag(self, mouse, dragging_shift):
-        self.move(mouse.pos[0] + dragging_shift[0], mouse.pos[1] + dragging_shift[1])
+    def start_drag(self, mouse, collusion_cords):
+        self.drag_shift = self.position[0] - collusion_cords[0], self.position[1] - collusion_cords[1]
+
+    def drag(self, mouse):
+        self.move(mouse.pos[0] + self.drag_shift[0], mouse.pos[1] + self.drag_shift[1])
 
     def collide_with_cords(self, x, y):
         return self.x <= x <= self.x + self.width and self.y <= y <= self.y + self.height
@@ -85,11 +105,53 @@ class RectObject(Object):
         return self.x, self.y
 
 
+class Button(Object):
+    def move(self, x, y):
+        pass
+
+    def collide_with_cords(self, x, y) -> bool:
+        return self.x <= x <= self.x + self.size[0] and self.y <= self.size[1] <= self.y + self.size[1]
+
+    def __init__(self, width: int, height: int, x: int, y: int, text: str,
+                 callback=None, color: pygame.Color | tuple[int, int, int] = (0, 0, 0)):
+        self.size = (width, height)
+        self.x = x
+        self.y = y
+
+        self.text = text
+
+        self.callback = callback
+
+        self.clicked = False
+
+        obj = pygame.Rect(x, y, width, height)
+        super().__init__(obj, pygame.Surface(self.size), color)
+
+    def draw(self, win: pygame.Surface):
+        win.blit(self.surface, self.obj)
+
+    def click(self, mouse: Mouse):
+        self.callback(self)
+
+    def hold(self, mouse):
+        if self.clicked: return
+        self.clicked = True
+        self.callback(self)
+
+    def end_hold(self):
+        self.clicked = False
+
+    @property
+    def position(self):
+        return self.x, self.y
+
+
 class ObjectManager:
     def __init__(self, win):
         self.objects: list[Object] = []
 
-        self.find_dragged_obj: bool = False
+        self.find_collide_obj: bool = False
+        self.collide_object = None
         self.dragging_shift = (0, 0)
 
         self.win = win
@@ -98,26 +160,43 @@ class ObjectManager:
     def add_object(self, obj: Object):
         self.objects.append(obj)
 
-    def find_colusion_with_mouse(self, mouse):
+    def add_objects(self, *objects):
+        for obj in objects:
+            self.add_object(obj)
+
+    def find_collusion_with_mouse(self, mouse):
         for _id in range(1, len(self.objects) + 1):
             obj = self.objects[-_id]
 
-            if obj.collide_with_cords(*mouse.pos):
-                self.find_dragged_obj = True
-                self.dragging_shift = (obj.position[0] - mouse.pos[0], obj.position[1] - mouse.pos[1])
-                self.objects.append(self.objects.pop(-_id))
+            if obj.collide_with_cords(*mouse.last_pos):
+                obj.start_drag(mouse, mouse.last_pos)
+                self.find_collide_obj = True
+                self.collide_object = obj
                 return obj
 
-        self.find_dragged_obj = False
+        self.find_collide_obj = False
 
         return self.empty_object
 
     def drag(self, mouse: Mouse) -> None:
-        if self.find_dragged_obj:
-            self.objects[-1].drag(mouse, self.dragging_shift)
+        if self.find_collide_obj:
+            self.collide_object.drag(mouse)
+
+    def end_drag(self):
+        if not self.find_collide_obj: return
+        self.collide_object.end_drag()
+        self.find_collide_obj = False
+
+    def end_click(self):
+        if not self.find_collide_obj: return
+        self.collide_object.end_click()
+
+    def end_hold(self):
+        if not self.find_collide_obj: return
+        self.collide_object.end_hold()
 
     def click(self, mouse: Mouse) -> None:
-        self.find_colusion_with_mouse(mouse).click(mouse)
+        self.find_collusion_with_mouse(mouse).click(mouse)
 
     def draw(self):
         for obj in self.objects:
