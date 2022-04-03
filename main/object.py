@@ -85,6 +85,16 @@ class RectObject(Object):
         return self.x, self.y
 
 
+class Button(RectObject):
+    def __init__(self, x, y, width, height, text, callback, color=pygame.color.Color(255, 255, 2)):
+        super().__init__(x, y, width, height, color)
+        self.callback = callback
+        self.text = text
+
+    def click(self, mouse: Mouse):
+        self.callback(self)
+
+
 class ObjectManager:
     def __init__(self, win):
         self.objects: list[Object] = []
@@ -98,7 +108,11 @@ class ObjectManager:
     def add_object(self, obj: Object):
         self.objects.append(obj)
 
-    def find_colusion_with_mouse(self, mouse):
+    def add_objects(self, objs: list):
+        for obj in objs:
+            self.add_object(obj)
+
+    def find_collusion_with_mouse(self, mouse):
         for _id in range(1, len(self.objects) + 1):
             obj = self.objects[-_id]
 
@@ -117,7 +131,7 @@ class ObjectManager:
             self.objects[-1].drag(mouse, self.dragging_shift)
 
     def click(self, mouse: Mouse) -> None:
-        self.find_colusion_with_mouse(mouse).click(mouse)
+        self.find_collusion_with_mouse(mouse).click(mouse)
 
     def draw(self):
         for obj in self.objects:
