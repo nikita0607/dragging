@@ -6,6 +6,9 @@ from main import Main
 
 
 class Manage(Manager):
+    def __init__(self, main: Main):
+        self.main = main
+
     def draw(self, win):
         pass
 
@@ -22,4 +25,4 @@ class Manage(Manager):
 
 
 def setup():
-    return Manage()
+    return Manage
