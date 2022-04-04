@@ -2,5 +2,6 @@
 */env
 */venv
 */__pyenv__
+/__pycache__
 venv
 env
